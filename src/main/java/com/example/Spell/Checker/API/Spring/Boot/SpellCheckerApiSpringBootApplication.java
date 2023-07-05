@@ -12,7 +12,11 @@ import java.util.ArrayList;
 public class SpellCheckerApiSpringBootApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SpellCheckerApiSpringBootApplication.class, args);
+//		SpringApplication.run(SpellCheckerApiSpringBootApplication.class, args);
+//		SpellCorrectService.initializeArrayListInTableOfWordLength();
+//		SpellCorrectService.insertWordsInTableOfWordLength();
+//		SpellCorrectService.printContentOfHashTable();
+		SpellCorrectService.testSpellCorrect();
 	}
 
 }
