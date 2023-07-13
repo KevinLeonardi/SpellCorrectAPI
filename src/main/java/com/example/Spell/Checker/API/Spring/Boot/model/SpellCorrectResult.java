@@ -9,7 +9,7 @@ public class SpellCorrectResult {
     private ArrayList<String> suggestions;
 
     public SpellCorrectResult(@JsonProperty("wordChecked") String wordToCorrect,
-                              @JsonProperty("suggestions") ArrayList<String> suggestions) {
+                              @JsonProperty("correction") ArrayList<String> suggestions) {
         this.wordToCorrect = wordToCorrect;
         this.suggestions = suggestions;
     }

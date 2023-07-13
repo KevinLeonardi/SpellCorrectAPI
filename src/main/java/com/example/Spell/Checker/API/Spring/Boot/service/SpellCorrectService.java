@@ -21,12 +21,12 @@ public class SpellCorrectService {
     static String filePath = "C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\kamus inggris.txt";
 //    static String filePath = "C:\\Users\\ACER\\IdeaProjects\\Spell Correct API\\src\\hasil1tolower.txt";
     static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
-    private static Map<String, Integer> WORDS;
+    public static Map<String, Integer> WORDS;
     @Autowired
     public SpellCorrectService() {
     }
 
-    public ArrayList<SpellCorrectResult> doSpellCorrect(InputParagraph inputParagraph){
+    public ArrayList<SpellCorrectResult> doSpellCheckAndSuggest(InputParagraph inputParagraph){
         ArrayList<SpellCorrectResult> spellCorrectResults = new ArrayList<>();
         ArrayList<String> suggestions;
 
@@ -40,6 +40,26 @@ public class SpellCorrectService {
         }
         return spellCorrectResults;
     }
+    public ArrayList<SpellCorrectResult> doSpellCheckAndCorrect(InputParagraph inputParagraph){
+        ArrayList<SpellCorrectResult> spellCorrectResults = new ArrayList<>();
+        String correction;
+        WORDS = new HashMap<>();
+        loadWords("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\corpus inggris.txt");
+
+
+        initializeArrayListInTableOfWordLength();
+        insertWordsInTableOfWordLength();
+
+        for(int i = 0; i < inputParagraph.getInputInArray().length; i++){
+            String word = inputParagraph.getInputInArray()[i];
+            correction = correction(word);
+            ArrayList<String> correctionInArrayList= new ArrayList<>();
+            correctionInArrayList.add(correction);
+            spellCorrectResults.add(new SpellCorrectResult(word,correctionInArrayList));
+        }
+        return spellCorrectResults;
+    }
+
 
 //    public static long computeWordHashValue(String word){
 //        char[] wordInChar = word.toCharArray();
@@ -62,11 +82,8 @@ public class SpellCorrectService {
 //        String word = "promblem"; // The word to be corrected
         initializeArrayListInTableOfWordLength();
         insertWordsInTableOfWordLength();
-//        SpellCorrectService.printContentOfHashTable();
-//        System.out.println(Arrays.toString(tableOfWordLength));
         long start = System.currentTimeMillis();
         int good = 0;
-        int unknown = 0;
         int n = tests.size();
 
         for (TestCase test : tests) {
@@ -89,6 +106,7 @@ public class SpellCorrectService {
         long dt = System.currentTimeMillis() - start;
         System.out.printf("%.0f%% of %d correct at %.0f words per second%n",
                 (double) good / n * 100, n, n / (dt / 1000.0));
+        System.out.println("good "+good+" n = "+n);
     }
 
     public static List<TestCase> parseTestSet(List<String> lines) {
@@ -125,11 +143,24 @@ public class SpellCorrectService {
         }
     }
     public static String correction(String word) {
-        String[] candidates = spellCheckAndSuggest(word).toArray(new String[0]);
-//        System.out.println("candidates" +Arrays.toString(candidates));
-        if(candidates.length==0){
+        word = word.toLowerCase();
+        String[] candidates1 = spellCheckAndSuggestEditDistance1(word).toArray(new String[0]);//berisi 2 array, yg edit distance 1 dan 2
+        String[] candidates2 = spellCheckAndSuggestEditDistance2(word).toArray(new String[0]);
+//        System.out.println("candidates1" +Arrays.toString(candidates1));
+        if(candidates1.length==0 && candidates2.length==0){
+//            System.out.println("no correction for word "+word);
             return "";
         }
+        if(candidates1.length>0){
+            System.out.println("candidates1 "+ Arrays.toString(candidates1));
+            return choose1Word(candidates1);
+        }else{
+            System.out.println("candidates2 "+Arrays.toString(candidates2));
+            return choose1Word(candidates2);
+        }
+    }
+
+    public static String choose1Word(String[] candidates){
         String correctedWord = candidates[0]; // Default to the first candidate
         double maxProbability = P(correctedWord);
 
@@ -168,12 +199,96 @@ public class SpellCorrectService {
         ArrayList<String> suggestions;
 
         if(query.length()<15){
-            suggestions = returnSuggestionForWordLengthNotMoreThan15(query);
+            suggestions = returnSuggestionForWordLengthNotMoreThan15EditDistance1(query);
         }else{
-            suggestions = returnSuggestionForWordLength15AndMore(query);
+            suggestions = returnSuggestionForWordLength15AndMoreEditDistance1(query);
         }
         return suggestions;
     }
+    public static ArrayList<String> returnSuggestionEditDistance2(String query){
+        ArrayList<String> suggestions;
+
+        if(query.length()<15){
+            suggestions = returnSuggestionForWordLengthNotMoreThan15EditDistance2(query);
+        }else{
+            suggestions = returnSuggestionForWordLength15AndMoreEditDistance2(query);
+        }
+        return suggestions;
+    }
+    public static ArrayList<String> returnSuggestionForWordLengthNotMoreThan15EditDistance2(String query){
+        ArrayList<String> suggestions = new ArrayList<>();
+        int wordIndex = query.length()-1;
+        if(wordIndex-2<=0){
+            wordIndex=2;
+        }
+//        System.out.println("query length "+query.length());
+        for(int i = wordIndex-2; i < wordIndex+3; i+=4){//supaya tidak melakukan edit distance 1 lgi
+//            System.out.println(tableOfWordLength[i]);
+//            System.out.println(query);
+            for(int j = 0; j < tableOfWordLength[i].size(); j++){
+//                System.out.println("i = "+i);
+                String wordInTable = tableOfWordLength[i].get(j);
+                if(levenshteinDistance.apply(query,wordInTable)<=2){
+                    suggestions.add(wordInTable);
+                }
+            }
+        }
+        return suggestions;
+    }
+    public static ArrayList<String> returnSuggestionForWordLength15AndMoreEditDistance2(String query){
+        ArrayList<String> suggestions = new ArrayList<>();
+        int wordIndex = query.length()-1;
+//        System.out.println("query length "+query.length());
+        for(int i = wordIndex-2; i < 16; i+=4){//example pronounciation with length 14 at index 13, so we check from index 11-15
+            for(int j = 0; j < tableOfWordLength[i].size(); j++){
+//                System.out.println("i = "+i);
+                String wordInTable = tableOfWordLength[i].get(j);
+                if(levenshteinDistance.apply(query,wordInTable)<=2){
+                    suggestions.add(wordInTable);
+                }
+            }
+        }
+        return suggestions;
+    }
+
+    public static ArrayList<String> returnSuggestionForWordLengthNotMoreThan15EditDistance1(String query){
+        ArrayList<String> suggestions = new ArrayList<>();
+        int wordIndex = query.length()-1;
+        if(wordIndex-1<0){
+            wordIndex=1;
+        }
+//        System.out.println("query length "+query.length());
+        for(int i = wordIndex-1; i < wordIndex+2; i++){//example pronounciation with length 14 at index 13, so we check from index 11-15
+//            System.out.println(tableOfWordLength[i]);
+//            System.out.println("i "+i);
+            for(int j = 0; j < tableOfWordLength[i].size(); j++){
+//                System.out.println("j = "+j);
+                String wordInTable = tableOfWordLength[i].get(j);
+//                System.out.println("query "+query+" wordInTable "+wordInTable);
+                if(levenshteinDistance.apply(query,wordInTable)<=2){
+//                    System.out.println(wordInTable+" added");
+                    suggestions.add(wordInTable);
+                }
+            }
+        }
+        return suggestions;
+    }
+    public static ArrayList<String> returnSuggestionForWordLength15AndMoreEditDistance1(String query){
+        ArrayList<String> suggestions = new ArrayList<>();
+        int wordIndex = query.length()-1;
+//        System.out.println("query length "+query.length());
+        for(int i = wordIndex-1; i < 16; i++){//example pronounciation with length 14 at index 13, so we check from index 11-15
+            for(int j = 0; j < tableOfWordLength[i].size(); j++){
+//                System.out.println("i = "+i);
+                String wordInTable = tableOfWordLength[i].get(j);
+                if(levenshteinDistance.apply(query,wordInTable)<=2){
+                    suggestions.add(wordInTable);
+                }
+            }
+        }
+        return suggestions;
+    }
+
 
     public static ArrayList<String> returnSuggestionForWordLengthNotMoreThan15(String query){
         ArrayList<String> suggestions = new ArrayList<>();
@@ -259,9 +374,44 @@ public class SpellCorrectService {
         }else {
          //   System.out.println(query+" is not found in dictionary");
             result = returnSuggestion(query);
+
+        }
+        return result;
+    }
+    public static ArrayList<String> spellCheckAndSuggestEditDistance1(String query){
+        ArrayList<String> result = new ArrayList<>();
+        if(isFoundInDictionaryTables(query)){
+//               System.out.println(query+" is found in dictionary, no need to be corrected");
+        }else {
+            //   System.out.println(query+" is not found in dictionary");
+            result = returnSuggestionEditDistance1(query);
+//            System.out.println("result is "+result);
+        }
+        return result;
+    }
+    public static ArrayList<String> spellCheckAndSuggestEditDistance2(String query){
+        ArrayList<String> result = new ArrayList<>();
+        if(isFoundInDictionaryTables(query)){
+            //   System.out.println(query+" is found in dictionary, no need to be corrected");
+        }else {
+            //   System.out.println(query+" is not found in dictionary");
+            result = returnSuggestionEditDistance2(query);
+//            System.out.println("result is "+result);
         }
         return result;
     }
 
+//    public static String[] spellCheckAndCorrect(String query){
+////        ArrayList<String> result = new ArrayList<>();
+//        String result1, result2;
+//        if(isFoundInDictionaryTables(query)){
+//            //   System.out.println(query+" is found in dictionary, no need to be corrected");
+//        }else {
+//            //   System.out.println(query+" is not found in dictionary");
+//            result1 = correction(query);
+//
+//        }
+//        return result1;
+//    }
 
 }

@@ -18,6 +18,6 @@ public class SpellCorrectController {
     }
     @PostMapping
     public ArrayList<SpellCorrectResult> test(@RequestBody InputParagraph inputParagraph){
-        return spellCorrectService.doSpellCorrect(inputParagraph);
+        return spellCorrectService.doSpellCheckAndCorrect(inputParagraph);
     }
 }
