@@ -13,32 +13,30 @@ import java.util.*;
 public class TestAccuracyAndSpeed {
     static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
     public static void main(String[] args) {
-//        List<String> lines;
-//        try {
-//            lines = Files.readAllLines(Path.of("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\spell test set english 1.txt"));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return;
+        List<String> lines;
+        String indonesianCorpusPath = "C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\corpus.txt";
+        String indonesianDictionaryPath = "C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\kamus indo.txt";
+        String englishCorpusPath = "C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\corpus inggris.txt";
+        String englishDictionaryPath = "C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\kamus inggris.txt";
+//
+//n;        try {
+//                lines = Files.readAllLines(Path.of("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\spell-testset3.txt"));
+////            lines = Files.readAllLines(Path.of("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\spell test set english 1.txt"));
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                retur
 //        }
 //        List<TestCase> tests = SpellCorrectService.parseTestSet(lines);
-//        SpellCorrectService.testSpellCorrect(tests);
+//        SpellCorrectService.testSpellCorrect(tests,englishCorpusPath,englishDictionaryPath);
 
-//        SpellCorrectService.initializeArrayListInTableOfWordLength();
-//        SpellCorrectService.insertWordsInTableOfWordLength();
-//        String[] candidates1 = SpellCorrectService.spellCheckAndSuggestEditDistance2("guic").toArray(new String[0]);//berisi 2 array, yg edit distance 1 dan 2
-//        System.out.println(Arrays.toString(candidates1));
-//        System.out.println(SpellCorrectService.returnSuggestionForWordLengthNotMoreThan15EditDistance1("a"));
-
-//        SpellCorrectService.loadWords("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\corpus inggris.txt");
-//        String word = "promblem"; // The word to be corrected
-        SpellCorrectService.initializeArrayListInTableOfWordLength();
-        SpellCorrectService.insertWordsInTableOfWordLength();
-//        SpellCorrectService.printContentOfHashTable();
+        ////////////////////////////////////////
+        String corpusPath = indonesianCorpusPath;
+        String dictionaryPath = indonesianDictionaryPath;
         SpellCorrectService.WORDS = new HashMap<>();
-        SpellCorrectService.loadWords("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\corpus inggris.txt");
-//        System.out.println(SpellCorrectService.WORDS.size());
-        System.out.println(SpellCorrectService.correction("parites"));
-//        System.out.println(levenshteinDistance.apply("sending","senidng"));
-//        System.out.println();
+        SpellCorrectService.loadWords(corpusPath);
+        SpellCorrectService.initializeArrayListInTableOfWordLength();
+        SpellCorrectService.insertWordsInTableOfWordLength(dictionaryPath);
+        System.out.println(SpellCorrectService.correction("dalm"));
+//        System.out.println(levenshteinDistance.apply("analised","analysed"));
     }
 }

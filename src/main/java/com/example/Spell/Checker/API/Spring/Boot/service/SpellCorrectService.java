@@ -18,37 +18,38 @@ public class SpellCorrectService {
     static Random random = new Random();
     static ArrayList<String>[] tableOfWordLength = new ArrayList[16];//table dengan panjang kata 1, berada di index 0,
     //panjang kata 2, di index 2 dst
-    static String filePath = "C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\kamus inggris.txt";
+//    static String filePath = "C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\kamus inggris.txt";
 //    static String filePath = "C:\\Users\\ACER\\IdeaProjects\\Spell Correct API\\src\\hasil1tolower.txt";
     static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
+
     public static Map<String, Integer> WORDS;
     @Autowired
     public SpellCorrectService() {
     }
 
-    public ArrayList<SpellCorrectResult> doSpellCheckAndSuggest(InputParagraph inputParagraph){
-        ArrayList<SpellCorrectResult> spellCorrectResults = new ArrayList<>();
-        ArrayList<String> suggestions;
-
-        initializeArrayListInTableOfWordLength();
-        insertWordsInTableOfWordLength();
-
-        for(int i = 0; i < inputParagraph.getInputInArray().length; i++){
-            String word = inputParagraph.getInputInArray()[i];
-            suggestions = spellCheckAndSuggest(word);
-            spellCorrectResults.add(new SpellCorrectResult(word,suggestions));
-        }
-        return spellCorrectResults;
-    }
-    public ArrayList<SpellCorrectResult> doSpellCheckAndCorrect(InputParagraph inputParagraph){
+//    public ArrayList<SpellCorrectResult> doSpellCheckAndSuggest(InputParagraph inputParagraph){
+//        ArrayList<SpellCorrectResult> spellCorrectResults = new ArrayList<>();
+//        ArrayList<String> suggestions;
+//
+//        initializeArrayListInTableOfWordLength();
+//        insertWordsInTableOfWordLength();
+//
+//        for(int i = 0; i < inputParagraph.getInputInArray().length; i++){
+//            String word = inputParagraph.getInputInArray()[i];
+//            suggestions = spellCheckAndSuggest(word);
+//            spellCorrectResults.add(new SpellCorrectResult(word,suggestions));
+//        }
+//        return spellCorrectResults;
+//    }
+    public ArrayList<SpellCorrectResult> doSpellCheckAndCorrect(InputParagraph inputParagraph, String corpusPath, String dictionaryPath){
         ArrayList<SpellCorrectResult> spellCorrectResults = new ArrayList<>();
         String correction;
         WORDS = new HashMap<>();
-        loadWords("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\corpus inggris.txt");
+        loadWords(corpusPath);
 
 
         initializeArrayListInTableOfWordLength();
-        insertWordsInTableOfWordLength();
+        insertWordsInTableOfWordLength(dictionaryPath);
 
         for(int i = 0; i < inputParagraph.getInputInArray().length; i++){
             String word = inputParagraph.getInputInArray()[i];
@@ -75,13 +76,17 @@ public class SpellCorrectService {
 //            r[i] = random.nextInt(Integer.MAX_VALUE/4);
 //        }
 //    }
-    public static void testSpellCorrect(List<TestCase> tests){
+    public static void testSpellCorrect(List<TestCase> tests, String corpusPath, String dictionaryPath){
 //        ArrayList<String> suggestions;
+        ArrayList<String> notFound = new ArrayList<>();
+        ArrayList<String> rightList = new ArrayList<>();
+
         WORDS = new HashMap<>();
-        loadWords("C:\\Users\\ACER\\Documents\\Skripsi Kevin Leonardi Spell Corrector\\corpus inggris.txt");
+        loadWords(corpusPath);
 //        String word = "promblem"; // The word to be corrected
         initializeArrayListInTableOfWordLength();
-        insertWordsInTableOfWordLength();
+        insertWordsInTableOfWordLength(dictionaryPath);
+//        printContentOfHashTable();
         long start = System.currentTimeMillis();
         int good = 0;
         int n = tests.size();
@@ -92,21 +97,43 @@ public class SpellCorrectService {
 
             String w = wrong;
             if (isFoundInDictionaryTables(w)) {
+//                good++;
                 System.out.println("word: " + w + " exists in the vocabulary. No correction required");
             } else {
                 String wOld = w;
                 w = correction(w);
+                if(w.equals("")){
+                    notFound.add(wOld);
+                    rightList.add(right);
+                }
                 System.out.println("found replacement: " + w + " for word: " + wOld);
             }
 
             if (w.equals(right)) {
                 good++;
+//                System.out.println("w is "+w);
             }
         }
         long dt = System.currentTimeMillis() - start;
         System.out.printf("%.0f%% of %d correct at %.0f words per second%n",
                 (double) good / n * 100, n, n / (dt / 1000.0));
-        System.out.println("good "+good+" n = "+n);
+
+//        System.out.println("good "+good+" n = "+n);
+//        System.out.println("/////////////////////////////////////////////////");
+//        for(int i = 0 ; i < notFound.size(); i++){
+//            int rightListItemSize = rightList.get(i).length();
+//            int leftListItemSize = notFound.get(i).length();
+//            System.out.println(rightList.get(i)+" "+notFound.get(i)+" text length dif "+Math.abs(rightListItemSize-leftListItemSize)+
+//                    " lev distance is "+levenshteinDistance.apply(rightList.get(i), notFound.get(i)));
+//        }
+//        System.out.println("notFound size "+notFound.size());
+//
+//        System.out.println("=================================================");
+////        for(int i = 0 ; i < rightList.size(); i++){
+////            System.out.println(rightList.get(i));
+////        }
+//        System.out.println("correct size "+rightList.size());
+//        System.out.println("not found  "+notFound);
     }
 
     public static List<TestCase> parseTestSet(List<String> lines) {
@@ -126,6 +153,7 @@ public class SpellCorrectService {
 
     public static double P(String word) {
         int totalWordCount = WORDS.values().stream().mapToInt(Integer::intValue).sum();
+//        System.out.println("occurrence "+word+" "+WORDS.getOrDefault(word, 0)+" totalWordCount "+totalWordCount);
         return (double) WORDS.getOrDefault(word, 0) / totalWordCount;
     }
 
@@ -145,17 +173,20 @@ public class SpellCorrectService {
     public static String correction(String word) {
         word = word.toLowerCase();
         String[] candidates1 = spellCheckAndSuggestEditDistance1(word).toArray(new String[0]);//berisi 2 array, yg edit distance 1 dan 2
+        System.out.println("candidates1 "+ Arrays.toString(candidates1));
         String[] candidates2 = spellCheckAndSuggestEditDistance2(word).toArray(new String[0]);
+        System.out.println("candidates2 "+Arrays.toString(candidates2));
+
 //        System.out.println("candidates1" +Arrays.toString(candidates1));
         if(candidates1.length==0 && candidates2.length==0){
 //            System.out.println("no correction for word "+word);
             return "";
         }
         if(candidates1.length>0){
-            System.out.println("candidates1 "+ Arrays.toString(candidates1));
+//            System.out.println("candidates1 "+ Arrays.toString(candidates1));
             return choose1Word(candidates1);
         }else{
-            System.out.println("candidates2 "+Arrays.toString(candidates2));
+//            System.out.println("candidates2 "+Arrays.toString(candidates2));
             return choose1Word(candidates2);
         }
     }
@@ -163,13 +194,16 @@ public class SpellCorrectService {
     public static String choose1Word(String[] candidates){
         String correctedWord = candidates[0]; // Default to the first candidate
         double maxProbability = P(correctedWord);
+//        System.out.println(correctedWord+" "+maxProbability);
 
         for (int i = 1; i < candidates.length; i++) {
             String candidate = candidates[i];
             double probability = P(candidate);
+//            System.out.println("candidate "+candidate+" , probability "+probability);
             if (probability > maxProbability) {
                 correctedWord = candidate;
                 maxProbability = probability;
+//                System.out.println(correctedWord+""+maxProbability);
             }
         }
         return correctedWord;
@@ -228,7 +262,7 @@ public class SpellCorrectService {
             for(int j = 0; j < tableOfWordLength[i].size(); j++){
 //                System.out.println("i = "+i);
                 String wordInTable = tableOfWordLength[i].get(j);
-                if(levenshteinDistance.apply(query,wordInTable)<=2){
+                if(levenshteinDistance.apply(query,wordInTable)==2){
                     suggestions.add(wordInTable);
                 }
             }
@@ -243,7 +277,7 @@ public class SpellCorrectService {
             for(int j = 0; j < tableOfWordLength[i].size(); j++){
 //                System.out.println("i = "+i);
                 String wordInTable = tableOfWordLength[i].get(j);
-                if(levenshteinDistance.apply(query,wordInTable)<=2){
+                if(levenshteinDistance.apply(query,wordInTable)==2){
                     suggestions.add(wordInTable);
                 }
             }
@@ -265,7 +299,7 @@ public class SpellCorrectService {
 //                System.out.println("j = "+j);
                 String wordInTable = tableOfWordLength[i].get(j);
 //                System.out.println("query "+query+" wordInTable "+wordInTable);
-                if(levenshteinDistance.apply(query,wordInTable)<=2){
+                if(levenshteinDistance.apply(query,wordInTable)==1){
 //                    System.out.println(wordInTable+" added");
                     suggestions.add(wordInTable);
                 }
@@ -281,7 +315,7 @@ public class SpellCorrectService {
             for(int j = 0; j < tableOfWordLength[i].size(); j++){
 //                System.out.println("i = "+i);
                 String wordInTable = tableOfWordLength[i].get(j);
-                if(levenshteinDistance.apply(query,wordInTable)<=2){
+                if(levenshteinDistance.apply(query,wordInTable)==1){
                     suggestions.add(wordInTable);
                 }
             }
@@ -342,7 +376,7 @@ public class SpellCorrectService {
             tableOfWordLength[i] = new ArrayList<>();
         }
     }
-    public static void insertWordsInTableOfWordLength(){
+    public static void insertWordsInTableOfWordLength(String filePath){
 //        generateRandomNumberArray();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
