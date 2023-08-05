@@ -173,9 +173,9 @@ public class SpellCorrectService {
     public static String correction(String word) {
         word = word.toLowerCase();
         String[] candidates1 = spellCheckAndSuggestEditDistance1(word).toArray(new String[0]);//berisi 2 array, yg edit distance 1 dan 2
-        System.out.println("candidates1 "+ Arrays.toString(candidates1));
+//        System.out.println("candidates1 "+ Arrays.toString(candidates1));
         String[] candidates2 = spellCheckAndSuggestEditDistance2(word).toArray(new String[0]);
-        System.out.println("candidates2 "+Arrays.toString(candidates2));
+//        System.out.println("candidates2 "+Arrays.toString(candidates2));
 
 //        System.out.println("candidates1" +Arrays.toString(candidates1));
         if(candidates1.length==0 && candidates2.length==0){

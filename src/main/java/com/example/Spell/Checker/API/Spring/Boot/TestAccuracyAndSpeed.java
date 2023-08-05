@@ -37,6 +37,6 @@ public class TestAccuracyAndSpeed {
         SpellCorrectService.initializeArrayListInTableOfWordLength();
         SpellCorrectService.insertWordsInTableOfWordLength(dictionaryPath);
         System.out.println(SpellCorrectService.correction("dalm"));
-//        System.out.println(levenshteinDistance.apply("analised","analysed"));
+        System.out.println(levenshteinDistance.apply("analised","analysed"));
     }
 }
